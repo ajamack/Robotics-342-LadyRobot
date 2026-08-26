@@ -28,7 +28,7 @@ def find_fwd_dist(ranges, thetas, window=5):
 
 
 # Initialize a robot object.
-robot = MBot()
+lady_robot = MBot()
 setpoint = 0.5  # TODO: Pick your setpoint. 
 
 try:
@@ -41,8 +41,8 @@ try:
         dist_to_wall = find_fwd_dist(ranges, thetas)
 
         if dist_to_wall > setpoint:
-            robot.drive(0.3,0,0) # Start Drive
-        else: robot.stop()
+            lady_robot.drive(0.3,0,0) # Start Drive
+        else: lady_robot.stop()
 
 
 

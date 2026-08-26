@@ -55,4 +55,4 @@ try:
 
 except:
     # Catch any exception, including the user quitting, and stop the robot.
-    robot.stop()
+    lady_robot.stop()

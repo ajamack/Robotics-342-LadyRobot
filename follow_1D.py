@@ -29,7 +29,7 @@ def find_fwd_dist(ranges, thetas, window=5):
 
 # Initialize a robot object.
 robot = MBot()
-setpoint = 0  # TODO: Pick your setpoint.
+setpoint = 0.5  # TODO: Pick your setpoint. 
 
 try:
     # Loop forever.
@@ -39,6 +39,13 @@ try:
 
         # Get the distance to the wall in front of the robot.
         dist_to_wall = find_fwd_dist(ranges, thetas)
+
+        if dist_to_wall > setpoint:
+            robot.drive(0.3,0,0) # Start Drive
+        else: robot.stop()
+
+
+
 
         # TODO: Implement the follow me controller to drive the robot based on
         # the distance to the wall in front.

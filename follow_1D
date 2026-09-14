@@ -56,6 +56,8 @@ try:
         # Optionally, sleep for a bit before reading a new scan.
         
 
-except:
-    # Catch any exception, including the user quitting, and stop the robot.
+except KeyboardInterrupt:
+    pass
+finally:
     lady_robot.stop()
+

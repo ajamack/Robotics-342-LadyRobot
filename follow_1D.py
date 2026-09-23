@@ -29,21 +29,24 @@ def find_fwd_dist(ranges, thetas, window=5):
 
 # Initialize a robot object.
 lady_robot = MBot()
-setpoint = 0.5  # TODO: Pick your setpoint. 
+setpoint = 0.5  # TODO: Pick your setpoint.
+Kp = 0.3 
 
 try:
     # Loop forever.
     while True:
         # Read the latest Lidar scan.
-        ranges, thetas = robot.read_lidar()
+        ranges, thetas = lady_robot.read_lidar()
 
         # Get the distance to the wall in front of the robot.
         dist_to_wall = find_fwd_dist(ranges, thetas)
+        
+        error = dist_to_wall - setpoint # Find the error
+        speed = Kp * error
+        speed = np.clip(speed, -0.3, 0.3) # Can't go faster tham 0.3
 
-        if dist_to_wall > setpoint:
-            lady_robot.drive(0.3,0,0) # Start Drive
-        else: lady_robot.stop()
-
+        lady_robot.drive(speed, 0, 0)
+        time.sleep(0.1)
 
 
 
@@ -51,7 +54,7 @@ try:
         # the distance to the wall in front.
 
         # Optionally, sleep for a bit before reading a new scan.
-        time.sleep(0.1)
+        
 
 except:
     # Catch any exception, including the user quitting, and stop the robot.

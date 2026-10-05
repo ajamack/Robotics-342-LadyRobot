@@ -21,33 +21,32 @@ def find_min_dist(ranges, thetas):
 
     return min_dist, min_angle
 
-
-def cross_product(v1, v2):
-    """Compute the Cross Product between two vectors.
-
-    Args:
-        v1 (list): First vector of length 3.
-        v2 (list): Second vector of length 3.
-
-    Returns:
-        list: The result of the cross product operation.
-    """
-    res = np.zeros(3)
-    # TODO: Compute the cross product.
-    return res
-
-
-robot = MBot()
-setpoint = 0  # TODO: Pick your setpoint.
-# TODO: Declare any other variables you might need here.
+lady_robot = MBot()
+setpoint = 0.3  # TODO: Pick your setpoint.
+Kp = 0.2
 
 try:
     while True:
         # Read the latest lidar scan.
         ranges, thetas = robot.read_lidar()
 
-        # TODO: (P1.2) Write code to follow the nearest wall here.
-        # Hint: You should use the functions cross_product and find_min_dist.
+        # Get the distance and angle to the wall.
+        dist_to_wall, angle_to_wall = find_min_dist(ranges, thetas)
+
+        error = dist_to_wall - setpoint # Find the error
+        speed = Kp * error
+        speed = np.clip(speed, -0.2, 0.2) # Can't go faster tham 0.3
+
+        vx = speed * np.cos(angle_to_wall)
+        vy = speed * np.sin(angle_to_wall)
+    
+        lady_robot.drive(vx, vy, 0)
+        time.sleep(0.2)
+
+        # TODO: Implement the 2D Follow Me controller
+        # Hint: Look at your code from follow_1D
+        # Hint: When you compute the velocity command, you might find the functions
+        # np.sin(value) and np.cos(value) helpful!
 
         # Optionally, sleep for a bit before reading a new scan.
         time.sleep(0.1)

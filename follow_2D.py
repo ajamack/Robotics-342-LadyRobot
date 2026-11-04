@@ -1,0 +1,59 @@
+import time
+import numpy as np
+from mbot_bridge.api import MBot
+
+
+def find_min_dist(ranges, thetas):
+    """Finds the length and angle of the minimum ray in the scan.
+
+    Make sure you ignore any rays with length 0! Those are invalid.
+
+    Args:
+        ranges (list): The length of each ray in the Lidar scan.
+        thetas (list): The angle of each ray in the Lidar scan.
+
+    Returns:
+        tuple: The length and angle of the shortest ray in the Lidar scan.
+    """
+    min_dist, min_angle = None, None
+
+    # Convert lists into np arrays for manipulation
+    ranges = np.array(ranges)
+    thetas = np.array(thetas)
+    valid_ind = (ranges > 0).nonzero()
+    valid_ranges = ranges[valid_ind]
+    valid_thetas = thetas[valid_ind]
+    min_ind = np.argmin(valid_ranges)  # Closest object, smallest value
+    min_dist = valid_ranges[min_ind]
+    min_angle = valid_thetas[min_ind]
+
+    return min_dist, min_angle
+
+
+lady_robot = MBot()
+setpoint = 0.3
+Kp = 0.2
+
+try:
+    while True:
+        # Read the latest Lidar scan.
+        ranges, thetas = lady_robot.read_lidar()
+
+        # Get the distance and angle to the nearest object.
+        dist_to_wall, angle_to_wall = find_min_dist(ranges, thetas)
+
+        error = dist_to_wall - setpoint  # Find the error
+        speed = Kp * error
+        speed = np.clip(speed, -0.2, 0.2)  # Can't go faster than max
+
+        vx = speed * np.cos(angle_to_wall)
+        vy = speed * np.sin(angle_to_wall)
+
+        lady_robot.drive(vx, vy, 0)
+        time.sleep(0.2)
+
+except KeyboardInterrupt:
+    pass
+
+finally:
+    lady_robot.stop()

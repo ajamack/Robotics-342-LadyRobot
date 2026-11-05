@@ -73,7 +73,8 @@ goal_y = float(input("Goal y: "))
 goal_theta = float(input("Goal theta (radians): "))
 goal = [goal_x, goal_y, goal_theta]
 
-while True:
+try: 
+    while True:
     pose = lady_robot.read_odometry()
     dist_error = np.sqrt((goal[0] - pose[0])**2 + (goal[1] - pose[1])**2)
     theta_error = abs(normalize_angle(goal[2] - pose[2]))
@@ -92,8 +93,13 @@ while True:
     lady_robot.drive(vx, vy, wz)
     time.sleep(0.05)
 
+except KeyboardInterrupt:
+    pass
+
+finally:
+
 # Stop the robot before exiting.
-lady_robot.stop()
+    lady_robot.stop()
 
 x, y, theta = lady_robot.read_odometry()
 print("Final odometry: x =", round(x, 3), "y =", round(y, 3), "theta =", round(theta, 3))

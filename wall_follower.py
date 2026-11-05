@@ -3,6 +3,22 @@ import numpy as np
 from mbot_bridge.api import MBot
 
 
+def normalize_angle(angle):
+    """Wrap an angle to [-pi, pi]."""
+    return np.arctan2(np.sin(angle), np.cos(angle))
+
+
+def find_min_nonzero_dist_in_slice(ranges, thetas, angle, slice_size):
+    """Index of the shortest nonzero ray within slice_size/2 of angle (-1 if none)."""
+    min_idx = -1
+    for i in range(len(ranges)):
+        in_slice = abs(normalize_angle(thetas[i] - angle)) <= slice_size / 2
+        if in_slice and ranges[i] > 0:
+            if min_idx == -1 or ranges[i] < ranges[min_idx]:
+                min_idx = i
+    return min_idx
+
+
 def find_min_dist(ranges, thetas):
     """Finds the length and angle of the minimum ray in the scan.
 
@@ -15,16 +31,10 @@ def find_min_dist(ranges, thetas):
     Returns:
         tuple: The length and angle of the shortest ray in the Lidar scan.
     """
-    min_dist, min_angle = None, None
-
-    for r, t in zip(ranges, thetas):
-        if r <= 0:
-            continue  # skip invalid rays
-        if min_dist is None or r < min_dist:
-            min_dist = r
-            min_angle = t
-
-    return min_dist, min_angle
+    idx = find_min_nonzero_dist_in_slice(ranges, thetas, 0, 2 * np.pi) # full circle
+    if idx == -1:
+        return None, None
+    return ranges[idx], thetas[idx]
 
 
 def cross_product(v1, v2):
@@ -44,40 +54,31 @@ def cross_product(v1, v2):
     return res
 
 
+def wall_follow(ranges, thetas, setpoint, speed):
+    """Move along the nearest wall while keeping setpoint distance from it."""
+    dist, angle = find_min_dist(ranges, thetas)
+    if dist is None:
+        return 0, 0, 0
+    wall = [np.cos(angle), np.sin(angle), 0] # points at wall
+    tangent = cross_product(wall, [0, 0, 1]) # points along wall
+    correction = 1.5 * (dist - setpoint) # Find the error
+    vx = speed * tangent[0] + correction * wall[0]
+    vy = speed * tangent[1] + correction * wall[1]
+    return vx, vy, 0
+
+
 lady_robot = MBot()
-setpoint = 0.3   # desired distance from the wall (m)
-speed = 0.2      # speed along the wall (m/s)
-Kp = 1.0         # gain for correcting distance to the wall
+setpoint = 0.35 # m from wall
+speed = 0.3 # m/s
 
 try:
     while True:
         # Read the latest lidar scan.
         ranges, thetas = lady_robot.read_lidar()
 
-        dist, angle = find_min_dist(ranges, thetas)
-        if dist is None:
-            lady_robot.stop()
-            time.sleep(0.1)
-            continue
+        vx, vy, wz = wall_follow(ranges, thetas, setpoint, speed)
+        lady_robot.drive(vx, vy, wz)
 
-        # Unit vector pointing toward the wall
-        to_wall = [np.cos(angle), np.sin(angle), 0]
-
-        # Vector parallel to the wall (perpendicular to to_wall)
-        along_wall = cross_product(to_wall, [0, 0, 1])
-
-        # Drive along the wall, and correct toward/away to hold the setpoint
-        error = dist - setpoint
-        vx = speed * along_wall[0] + Kp * error * to_wall[0]
-        vy = speed * along_wall[1] + Kp * error * to_wall[1]
-
-        vx = np.clip(vx, -0.3, 0.3)
-        vy = np.clip(vy, -0.3, 0.3)
-
-        lady_robot.drive(vx, vy, 0)
-
-        # Optionally, sleep for a bit before reading a new scan.
         time.sleep(0.1)
-except:
-    # Catch any exception, including the user quitting, and stop the robot.
+finally:
     lady_robot.stop()

@@ -8,7 +8,7 @@ obstacle_dist = 0.4 # wall follow when an obstacle is this close toward the goal
 wall_dist = 0.35 # distance to keep from wall while following it
 
 
-def normalize_angle(angle):
+def normalize_angle(angle): # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
     return np.arctan2(np.sin(angle), np.cos(angle))
  
@@ -73,21 +73,13 @@ goal_y = float(input("Goal y: "))
 goal_theta = float(input("Goal theta (radians): "))
 goal = [goal_x, goal_y, goal_theta]
 
-"""
-TODO: (P2.3 & P2.4) Write code to drive to the given goal while avoiding
-obstacles here.
-
-HINT: You may reuse your code and util functions from wall follower and hit the
-spot wherever you need to.
-"""
-
 while True:
     pose = lady_robot.read_odometry()
     dist_error = np.sqrt((goal[0] - pose[0])**2 + (goal[1] - pose[1])**2)
     theta_error = abs(normalize_angle(goal[2] - pose[2]))
  
     # Done when within 3 cm and 0.15 rad (with a little margin)
-    if dist_error < 0.02 and theta_error < 0.1:
+    if dist_error < 0.03 and theta_error < 0.15:
         break
  
     ranges, thetas = lady_robot.read_lidar()

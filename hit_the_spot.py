@@ -27,8 +27,8 @@ def hits_the_spot(goal, pose):
     """Hit the spot: P control on x, y, and theta at the same time."""
     dx = goal[0] - pose[0]
     dy = goal[1] - pose[1]
-    vx = np.clip(1.0 * ex, -speed, speed)
-    vy = np.clip(1.0 * ey, -speed, speed)
+    vx = np.clip(1.0 * dx, -speed, speed)
+    vy = np.clip(1.0 * dy, -speed, speed)
     wz = np.clip(1.5 * normalize_angle(goal[2] - pose[2]), -1.5, 1.5)
     return vx, vy, wz
 
@@ -52,7 +52,7 @@ def main():
             dtheta = abs(normalize_angle(goal[2] - pose[2]))
 
             # Done when within 3 cm and 0.15 rad (with a little margin)
-            if dist < 0.03 and dthete < 0.15:
+            if dist < 0.03 and dtheta < 0.15:
                 break
 
             vx, vy, wz = hits_the_spot(goal, pose)

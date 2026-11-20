@@ -19,7 +19,7 @@ def drive_to_pose(goal, pose):
     side_err = -np.sin(theta) * dx + np.cos(theta) * dy
     vx = np.clip(1.0 * forward_err, -speed, speed)
     vy = np.clip(1.0 * side_err, -speed, speed)
-    wz = 0
+    wz = np.clip(0.5 * normalize_angle(goal[2] - pose[2]), -0.5, 0.5)
     return vx, vy, wz
 
 

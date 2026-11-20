@@ -7,7 +7,12 @@ speed = 0.4  # m/s
 
 def normalize_angle(angle):  # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
-    return np.arctan2(np.sin(angle), np.cos(angle))
+    if angle > np.pi:
+        angle = angle - 2 * np.pi
+    elif angle < -np.pi:
+        angle = angle + 2 * np.pi
+    else:
+        return angle 
 
 
 def drive_to_pose(goal, pose):

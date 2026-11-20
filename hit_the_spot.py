@@ -7,9 +7,9 @@ speed = 0.3  # m/s
 
 def normalize_angle(angle):  # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
-    if angle < np.pi:
+    if angle > np.pi:
         angle = angle - 2 * np.pi
-    elif angle > -np.pi:
+    elif angle < -np.pi:
         angle = angle + 2 * np.pi
 
     return angle

@@ -53,11 +53,11 @@ def main():
                     break  # reached this goal
                 vx, vy, wz = drive_to_pose(goal, pose)
                 lady_robot.drive(vx, vy, wz)
+                print("I am here now: ", x,y, theta)
                 time.sleep(0.05)
 
             lady_robot.stop()
             x, y, theta = lady_robot.read_odometry()
-            print("I am here now: ", x,y, theta)
             print("Reached goal. x =", round(x, 3), "y =", round(y, 3), "theta =", round(theta, 3))
 
 

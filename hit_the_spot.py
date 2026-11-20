@@ -3,7 +3,7 @@ import numpy as np
 from mbot_bridge.api import MBot
 
 lady_robot = MBot()
-speed = 0.4  # m/s
+speed = 0.3  # m/s
 
 def normalize_angle(angle):  # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
@@ -11,8 +11,8 @@ def normalize_angle(angle):  # Avoid turning fully, choose shorter.
         angle = angle - 2 * np.pi
     elif angle < -np.pi:
         angle = angle + 2 * np.pi
-    
-    return angle 
+
+    return angle
 
 
 def drive_to_pose(goal, pose):
@@ -31,11 +31,11 @@ def drive_to_pose(goal, pose):
 def main():
     # Reset the robot odometry to zero at the beginning of the run.
     lady_robot.reset_odometry()
-    time.sleep(0.1)
+    time.sleep(0.5)
     x, y, theta = lady_robot.read_odometry()
 
-    print("I am here: ", pose[0],pose[1], pose[3])
-    
+    print("I am here:", x, y, theta)
+
     try:
         while True:
             goal_x = float(input("Goal x: "))
@@ -53,7 +53,7 @@ def main():
                     break  # reached this goal
                 vx, vy, wz = drive_to_pose(goal, pose)
                 lady_robot.drive(vx, vy, wz)
-                print("I am here now: ", x,y, theta)
+                print("I am here now:", pose[0], pose[1], pose[2], "| speeds:", vx, vy, wz)
                 time.sleep(0.05)
 
             lady_robot.stop()

@@ -11,8 +11,8 @@ wall_dist = 0.35 # distance to keep from wall while following it
 def normalize_angle(angle): # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
     return np.arctan2(np.sin(angle), np.cos(angle))
- 
- 
+
+
 def find_min_ray_in_slice(ranges, thetas, angle, slice_size):
     """Index of the shortest nonzero ray within slice_size/2 of angle (-1 if none)."""
     min_idx = -1
@@ -32,20 +32,21 @@ def cross_product(v1, v2):
     y = v1[2] * v2[0] - v1[0] * v2[2]
     z = v1[0] * v2[1] - v1[1] * v2[0]
     return [x, y, z]
-  
-def hits_the_spot(goal, pose):
+
+def drive_to_pose(goal, pose):
     """Hit the spot: P control on x, y, and theta at the same time."""
     dx = goal[0] - pose[0]
     dy = goal[1] - pose[1]
     # Rotate the error into the robot's frame
-    ex = np.cos(pose[2]) * dx + np.sin(pose[2]) * dy
-    ey = -np.sin(pose[2]) * dx + np.cos(pose[2]) * dy
-    vx = np.clip(1.0 * ex, -speed, speed)
-    vy = np.clip(1.0 * ey, -speed, speed)
+    theta = pose[2]
+    forward_err = np.cos(theta) * dx + np.sin(theta) * dy
+    side_err = -np.sin(theta) * dx + np.cos(theta) * dy
+    vx = np.clip(1.0 * forward_err, -speed, speed)
+    vy = np.clip(1.0 * side_err, -speed, speed)
     wz = np.clip(1.5 * normalize_angle(goal[2] - pose[2]), -1.5, 1.5)
     return vx, vy, wz
- 
- 
+
+
 def wall_follow(ranges, thetas):
     """Slide along the closest wall while staying wall_dist away."""
     idx = find_min_dist_all(ranges, thetas)
@@ -57,7 +58,7 @@ def wall_follow(ranges, thetas):
     vx = np.clip(speed * along[0] + error * wall[0], -speed, speed)
     vy = np.clip(speed * along[1] + error * wall[1], -speed, speed)
     return vx, vy, 0
- 
+
 def main():
     lady_robot.reset_odometry()
     time.sleep(0.5)
@@ -102,7 +103,7 @@ def main():
 
             # Move based on the state
             if state == "goal":
-                vx, vy, wz = hits_the_spot(goal, pose)
+                vx, vy, wz = drive_to_pose(goal, pose)
             else:
                 vx, vy, wz = wall_follow(ranges, thetas)
 

@@ -34,7 +34,7 @@ def main():
     time.sleep(0.1)
     x, y, theta = lady_robot.read_odometry()
 
-    print("I am here: " x,y, theta)
+    print("I am here: ", x,y, theta)
     
     try:
         while True:

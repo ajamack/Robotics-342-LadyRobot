@@ -19,7 +19,7 @@ def drive_to_pose(goal, pose):
     """Hit the spot: P control on x, y, and theta at the same time."""
     dx = goal[0] - pose[0]
     dy = goal[1] - pose[1]
-    theta = pose[2]
+    theta = -pose[2]
     forward_err = np.cos(theta) * dx + np.sin(theta) * dy
     side_err = -np.sin(theta) * dx + np.cos(theta) * dy
     vx = np.clip(1.0 * forward_err, -speed, speed)

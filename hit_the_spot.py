@@ -19,14 +19,14 @@ def drive_to_pose(goal, pose):
     side_err = -np.sin(theta) * dx + np.cos(theta) * dy
     vx = np.clip(1.0 * forward_err, -speed, speed)
     vy = np.clip(1.0 * side_err, -speed, speed)
-    wz = np.clip(1.5 * normalize_angle(goal[2] - pose[2]), -1.5, 1.5)
+    wz = 0
     return vx, vy, wz
 
 
 def main():
     # Reset the robot odometry to zero at the beginning of the run.
     lady_robot.reset_odometry()
-    time.sleep(0.5)
+    time.sleep(0.1)
     
     try:
         while True:

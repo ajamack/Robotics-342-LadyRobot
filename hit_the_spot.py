@@ -11,8 +11,8 @@ def normalize_angle(angle):  # Avoid turning fully, choose shorter.
         angle = angle - 2 * np.pi
     elif angle < -np.pi:
         angle = angle + 2 * np.pi
-    else:
-        return angle 
+    
+    return angle 
 
 
 def drive_to_pose(goal, pose):
@@ -34,7 +34,7 @@ def main():
     time.sleep(0.1)
     x, y, theta = lady_robot.read_odometry()
 
-    print("I am here: ", x,y, theta)
+    print("I am here: ", pose[0],pose[1], pose[3])
     
     try:
         while True:

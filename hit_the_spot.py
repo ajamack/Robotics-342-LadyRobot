@@ -57,6 +57,7 @@ def main():
 
             lady_robot.stop()
             x, y, theta = lady_robot.read_odometry()
+            print("I am here now: ", x,y, theta)
             print("Reached goal. x =", round(x, 3), "y =", round(y, 3), "theta =", round(theta, 3))
 
 

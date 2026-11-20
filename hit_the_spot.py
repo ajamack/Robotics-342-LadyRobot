@@ -3,7 +3,7 @@ import numpy as np
 from mbot_bridge.api import MBot
 
 lady_robot = MBot()
-speed = 0.3  # m/s
+speed = 0.4  # m/s
 
 def normalize_angle(angle):  # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
@@ -41,7 +41,7 @@ def main():
                 dy = goal[1] - pose[1]
                 dist = np.sqrt(dx**2 + dy**2)
                 dtheta = abs(normalize_angle(goal[2] - pose[2]))
-                if dist < 0.03 and dtheta < 0.15:
+                if dist < 0.05 and dtheta < 0.2:
                     break  # reached this goal
                 vx, vy, wz = drive_to_pose(goal, pose)
                 lady_robot.drive(vx, vy, wz)

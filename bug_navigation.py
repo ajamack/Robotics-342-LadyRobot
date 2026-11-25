@@ -8,7 +8,6 @@ obstacle_dist = 0.4 # wall follow when an obstacle is this close toward the goal
 wall_dist = 0.35 # distance to keep from wall while following it
 
 
-
 def normalize_angle(angle):  # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
     if angle > np.pi:
@@ -29,15 +28,54 @@ def find_min_nonzero_dist_in_slice(ranges, thetas, angle, slice_size):
                 min_idx = i
     return min_idx
 
-def find_min_dist_all(ranges, thetas):
-    return find_min_nonzero_dist_in_slice(ranges, thetas, 0, 2 * np.pi)
+
+def find_min_dist(ranges, thetas):
+    """Finds the length and angle of the minimum ray in the scan.
+
+    Make sure you ignore any rays with length 0! Those are invalid.
+
+    Args:
+        ranges (list): The length of each ray in the Lidar scan.
+        thetas (list): The angle of each ray in the Lidar scan.
+
+    Returns:
+        tuple: The length and angle of the shortest ray in the Lidar scan.
+    """
+    idx = find_min_nonzero_dist_in_slice(ranges, thetas, 0, 2 * np.pi) # full circle
+    if idx == -1:
+        return None, None
+    return ranges[idx], thetas[idx]
+
 
 def cross_product(v1, v2):
-    """Cross product of two 3D vectors."""
-    x = v1[1] * v2[2] - v1[2] * v2[1]
-    y = v1[2] * v2[0] - v1[0] * v2[2]
-    z = v1[0] * v2[1] - v1[1] * v2[0]
-    return [x, y, z]
+    """Compute the Cross Product between two vectors.
+
+    Args:
+        v1 (list): First vector of length 3.
+        v2 (list): Second vector of length 3.
+
+    Returns:
+        list: The result of the cross product operation.
+    """
+    res = np.zeros(3)
+    res[0] = v1[1] * v2[2] - v1[2] * v2[1]
+    res[1] = v1[2] * v2[0] - v1[0] * v2[2]
+    res[2] = v1[0] * v2[1] - v1[1] * v2[0]
+    return res
+
+
+def wall_follow(ranges, thetas, setpoint, speed):
+    """Move along the nearest wall while keeping setpoint distance from it."""
+    dist, angle = find_min_dist(ranges, thetas)
+    if dist is None:
+        return 0, 0, 0
+    wall = [np.cos(angle), np.sin(angle), 0] # points at wall
+    tangent = cross_product(wall, [0, 0, 1]) # points along wall
+    correction = 1.5 * (dist - setpoint) # Find the error
+    vx = speed * tangent[0] + correction * wall[0]
+    vy = speed * tangent[1] + correction * wall[1]
+    return vx, vy, 0
+
 
 def drive_to_pose(goal, pose):
     """Hit the spot: P control on x, y, and theta at the same time."""
@@ -53,20 +91,6 @@ def drive_to_pose(goal, pose):
     return vx, vy, wz
 
 
-def wall_follow(ranges, thetas, setpoint, speed):
-    """Move along the nearest wall while keeping setpoint distance from it."""
-    idx = find_min_dist_all(ranges, thetas)
-    if idx == -1:
-        return 0, 0, 0
-    dist = ranges[idx]
-    angle = thetas[idx]
-    wall = [np.cos(angle), np.sin(angle), 0] # points at wall
-    tangent = cross_product(wall, [0, 0, 1]) # points along wall
-    correction = 1.5 * (dist - setpoint) # Find the error
-    vx = np.clip(speed * tangent[0] + correction * wall[0], -speed, speed)
-    vy = np.clip(speed * tangent[1] + correction * wall[1], -speed, speed)
-    return vx, vy, 0
-
 def main():
     lady_robot.reset_odometry()
     time.sleep(0.5)
@@ -76,6 +100,7 @@ def main():
     goal_y = float(input("Goal y: "))
     goal_theta = float(input("Goal theta (radians): "))
     goal = [goal_x, goal_y, goal_theta]
+    following = False
 
     try:
         while True:
@@ -97,14 +122,20 @@ def main():
             # Check 2: is something blocking the way to the goal?
             idx = find_min_nonzero_dist_in_slice(ranges, thetas, goal_angle, np.pi / 3)
             blocked = idx != -1 and ranges[idx] < obstacle_dist and ranges[idx] < goal_dist
+            clear = idx == -1 or ranges[idx] > obstacle_dist + 0.3 or ranges[idx] > goal_dist
 
             if blocked:
+                following = True
+            elif clear:
+                following = False
+
+            if following:
                 vx, vy, wz = wall_follow(ranges, thetas, wall_dist, speed)
             else:
                 vx, vy, wz = drive_to_pose(goal, pose)
 
             lady_robot.drive(vx, vy, wz)
-            time.sleep(0.05)
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         pass

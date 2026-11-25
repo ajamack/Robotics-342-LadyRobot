@@ -48,7 +48,7 @@ def main():
                 dx = goal[0] - pose[0]
                 dy = goal[1] - pose[1]
                 dist = np.sqrt(dx**2 + dy**2)
-                theta_error = abs(normalize_angle(goal[2] - pose[2]))
+                dtheta = abs(normalize_angle(goal[2] - pose[2]))
                 print("Angular error:", normalize_angle(goal[2] - pose[2]))
                 if dist < 0.05 and dtheta < 0.2:
                     break  # reached this goal

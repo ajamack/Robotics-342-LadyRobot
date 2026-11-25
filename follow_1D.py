@@ -30,7 +30,7 @@ def find_fwd_dist(ranges, thetas, window=5):
 # Initialize a robot object.
 lady_robot = MBot()
 setpoint = 0.5  # TODO: Pick your setpoint.
-Kp = 0.3 
+Kp = 1
 
 try:
     # Loop forever.

@@ -8,13 +8,16 @@ obstacle_dist = 0.4 # wall follow when an obstacle is this close toward the goal
 wall_dist = 0.35 # distance to keep from wall while following it
 
 
-def normalize_angle(angle): # Avoid turning fully, choose shorter.
+def normalize_angle(angle):
     """Wrap an angle to [-pi, pi]."""
-    return np.arctan2(np.sin(angle), np.cos(angle))
+    if angle > np.pi:
+        angle -= 2 * np.pi
+    elif angle < -np.pi:
+        angle += 2 * np.pi
+    return angle
 
 
 def find_min_ray_in_slice(ranges, thetas, angle, slice_size):
-    """Index of the shortest nonzero ray within slice_size/2 of angle (-1 if none)."""
     min_idx = -1
     for i in range(len(ranges)):
         in_slice = abs(normalize_angle(thetas[i] - angle)) <= slice_size / 2
@@ -84,7 +87,7 @@ def main():
             goal_dist = np.sqrt(dx**2 + dy**2)
             goal_angle = normalize_angle(np.arctan2(dy, dx) - pose[2])
             theta_error = abs(normalize_angle(goal[2] - pose[2]))
-
+            print("Angular error:", normalize_angle(goal[2] - pose[2]))     
             # Check 1: are we at the goal?
             if goal_dist < 0.03 and theta_error < 0.15:
                 print("Goal reached!")

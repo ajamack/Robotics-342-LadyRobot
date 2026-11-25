@@ -10,11 +10,7 @@ wall_dist = 0.35 # distance to keep from wall while following it
 
 def normalize_angle(angle):
     """Wrap an angle to [-pi, pi]."""
-    if angle > np.pi:
-        angle -= 2 * np.pi
-    elif angle < -np.pi:
-        angle += 2 * np.pi
-    return angle
+    return np.arctan2(np.sin(angle), np.cos(angle))
 
 
 def find_min_ray_in_slice(ranges, thetas, angle, slice_size):
@@ -72,10 +68,6 @@ def main():
     goal_theta = float(input("Goal theta (radians): "))
     goal = [goal_x, goal_y, goal_theta]
 
-    # Current state: "goal" or "wall"
-    state = "goal"
-    hit_dist = 0  # how far the goal was when we hit the wall
-
     try:
         while True:
             pose = lady_robot.read_odometry()
@@ -87,7 +79,7 @@ def main():
             goal_dist = np.sqrt(dx**2 + dy**2)
             goal_angle = normalize_angle(np.arctan2(dy, dx) - pose[2])
             theta_error = abs(normalize_angle(goal[2] - pose[2]))
-            print("Angular error:", normalize_angle(goal[2] - pose[2]))     
+            print("Angular error:", normalize_angle(goal[2] - pose[2]))
             # Check 1: are we at the goal?
             if goal_dist < 0.03 and theta_error < 0.15:
                 print("Goal reached!")
@@ -97,18 +89,10 @@ def main():
             idx = find_min_ray_in_slice(ranges, thetas, goal_angle, np.pi / 3)
             blocked = idx != -1 and ranges[idx] < obstacle_dist and ranges[idx] < goal_dist
 
-            # Check 3: should we switch states?
-            if state == "goal" and blocked:
-                state = "wall"
-                hit_dist = goal_dist
-            elif state == "wall" and not blocked and goal_dist < hit_dist:
-                state = "goal"
-
-            # Move based on the state
-            if state == "goal":
-                vx, vy, wz = drive_to_pose(goal, pose)
-            else:
+            if blocked:
                 vx, vy, wz = wall_follow(ranges, thetas)
+            else:
+                vx, vy, wz = drive_to_pose(goal, pose)
 
             lady_robot.drive(vx, vy, wz)
             time.sleep(0.05)

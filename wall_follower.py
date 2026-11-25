@@ -3,9 +3,14 @@ import numpy as np
 from mbot_bridge.api import MBot
 
 
-def normalize_angle(angle):
+def normalize_angle(angle):  # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
-    return np.arctan2(np.sin(angle), np.cos(angle))
+    if angle > np.pi:
+        angle = angle - 2 * np.pi
+    elif angle < -np.pi:
+        angle = angle + 2 * np.pi
+
+    return angle
 
 
 def find_min_nonzero_dist_in_slice(ranges, thetas, angle, slice_size):

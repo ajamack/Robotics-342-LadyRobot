@@ -8,12 +8,19 @@ obstacle_dist = 0.4 # wall follow when an obstacle is this close toward the goal
 wall_dist = 0.35 # distance to keep from wall while following it
 
 
-def normalize_angle(angle):
+
+def normalize_angle(angle):  # Avoid turning fully, choose shorter.
     """Wrap an angle to [-pi, pi]."""
-    return np.arctan2(np.sin(angle), np.cos(angle))
+    if angle > np.pi:
+        angle = angle - 2 * np.pi
+    elif angle < -np.pi:
+        angle = angle + 2 * np.pi
+
+    return angle
 
 
-def find_min_ray_in_slice(ranges, thetas, angle, slice_size):
+def find_min_nonzero_dist_in_slice(ranges, thetas, angle, slice_size):
+    """Index of the shortest nonzero ray within slice_size/2 of angle (-1 if none)."""
     min_idx = -1
     for i in range(len(ranges)):
         in_slice = abs(normalize_angle(thetas[i] - angle)) <= slice_size / 2
@@ -23,7 +30,7 @@ def find_min_ray_in_slice(ranges, thetas, angle, slice_size):
     return min_idx
 
 def find_min_dist_all(ranges, thetas):
-    return find_min_ray_in_slice(ranges, thetas, 0, 2 * np.pi)
+    return find_min_nonzero_dist_in_slice(ranges, thetas, 0, 2 * np.pi)
 
 def cross_product(v1, v2):
     """Cross product of two 3D vectors."""
@@ -46,16 +53,18 @@ def drive_to_pose(goal, pose):
     return vx, vy, wz
 
 
-def wall_follow(ranges, thetas):
-    """Slide along the closest wall while staying wall_dist away."""
+def wall_follow(ranges, thetas, setpoint, speed):
+    """Move along the nearest wall while keeping setpoint distance from it."""
     idx = find_min_dist_all(ranges, thetas)
     if idx == -1:
         return 0, 0, 0
-    wall = [np.cos(thetas[idx]), np.sin(thetas[idx]), 0]
-    along = cross_product(wall, [0, 0, 1])                # arrow pointing along the wall
-    error = ranges[idx] - wall_dist                       # too far = positive, too close = negative
-    vx = np.clip(speed * along[0] + error * wall[0], -speed, speed)
-    vy = np.clip(speed * along[1] + error * wall[1], -speed, speed)
+    dist = ranges[idx]
+    angle = thetas[idx]
+    wall = [np.cos(angle), np.sin(angle), 0] # points at wall
+    tangent = cross_product(wall, [0, 0, 1]) # points along wall
+    correction = 1.5 * (dist - setpoint) # Find the error
+    vx = np.clip(speed * tangent[0] + correction * wall[0], -speed, speed)
+    vy = np.clip(speed * tangent[1] + correction * wall[1], -speed, speed)
     return vx, vy, 0
 
 def main():
@@ -86,11 +95,11 @@ def main():
                 break
 
             # Check 2: is something blocking the way to the goal?
-            idx = find_min_ray_in_slice(ranges, thetas, goal_angle, np.pi / 3)
+            idx = find_min_nonzero_dist_in_slice(ranges, thetas, goal_angle, np.pi / 3)
             blocked = idx != -1 and ranges[idx] < obstacle_dist and ranges[idx] < goal_dist
 
             if blocked:
-                vx, vy, wz = wall_follow(ranges, thetas)
+                vx, vy, wz = wall_follow(ranges, thetas, wall_dist, speed)
             else:
                 vx, vy, wz = drive_to_pose(goal, pose)
 
@@ -99,6 +108,9 @@ def main():
 
     except KeyboardInterrupt:
         pass
+
+    except Exception as e:
+        print("Error:", e)
 
     finally:
         lady_robot.stop()
